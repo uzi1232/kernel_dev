@@ -1,1 +1,0 @@
-cmd_/home/pi/src/threading/queue_module.ko := ld -r  -EL -T ./scripts/module-common.lds -T ./arch/arm/kernel/module.lds  --build-id  -o /home/pi/src/threading/queue_module.ko /home/pi/src/threading/queue_module.o /home/pi/src/threading/queue_module.mod.o ;  true
