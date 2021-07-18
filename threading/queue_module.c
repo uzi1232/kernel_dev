@@ -3,6 +3,7 @@
 #include <linux/kthread.h>
 #include <linux/sched.h>
 #include <linux/delay.h>
+#include <linux/completion.h>
 
 #define MAX_SIZE_QUEUE 1000
 
@@ -11,6 +12,7 @@ MODULE_AUTHOR("THE UZI");
 MODULE_DESCRIPTION("Single consumer sigle producer queue");
 
 //Thread varaibles
+static DECLARE_COMPLETION(thread_done);
 static struct task_struct* t1;
 static struct task_struct* t2;
 int val = 0;
@@ -45,7 +47,7 @@ bool pop(int *item)
     int current_head = atomic_read_acquire(&_head);
     if(current_head == atomic_read_acquire(&_tail))
     {
-        printk("The queue is empty");
+        //printk("The queue is empty");
         return false;   // empty queue
     }
 
@@ -58,14 +60,29 @@ bool pop(int *item)
 int consumer(void *ptr)
 {
     //pop
+    int count = 0;
     while(!kthread_should_stop())
     {
         int value = 0;
-        if(pop(&value))
+        if (pop(&value))
         {
-            printk("The received value is %d", value);
+            //printk("The received value is %d\n", value);
+            if (count != value)
+            {
+                printk("ERROR The value expected did not match %d\n", value);
+            }
+            else
+            {
+                count++;
+            }
+
+            if (count == 9999)
+            {
+                printk("Done receiving 500 values\n");
+            }
         }
-        msleep(500);
+        udelay(1000);
+        //msleep(1);
     }
     return 0;
 }
@@ -73,11 +90,11 @@ int consumer(void *ptr)
 int producer(void *ptr)
 {
     int i = 0;
-    msleep(2000);
+    //msleep(2000);
     //push
 //    while(!kthread_should_stop())
 //    {
-        for (i = 0; i < 50; i++)
+        for (i = 0; i < 10000; i++)
         {
         //msleep(1000);
             if (!push(i))
@@ -88,6 +105,7 @@ int producer(void *ptr)
         printk("Done sending all the values");
 
 //    }
+    complete_and_exit(&thread_done, 0);
     return 0;
 }
 
@@ -106,6 +124,7 @@ static int __init queue_module_init(void)
         {
             printk("Failed to create the producer thread\n");
             kthread_stop(t1);
+            complete(&thread_done);
         }
         printk("Successfully created both threads\n");
         //run the threads
@@ -118,8 +137,10 @@ static int __init queue_module_init(void)
 static void __exit queue_module_exit(void)
 {
     printk("Stopping the threads...\n");
-    kthread_stop(t1);
-    kthread_stop(t2);
+    kthread_stop(t1);//consumer
+    //producer
+    printk("waiting for the producer thread to finish ...\n");
+    wait_for_completion(&thread_done);
     printk("Stopped the threads\n");
     return;
 }
