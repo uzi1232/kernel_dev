@@ -1,0 +1,6 @@
+threading/*_module.ko
+threading/*_module.mod.c
+threading/*_module.mod.o
+threading/*_module.o
+threading/*.order
+threading/*.symvers
