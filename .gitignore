@@ -4,3 +4,10 @@ threading/*_module.mod.o
 threading/*_module.o
 threading/*.order
 threading/*.symvers
+*/*.ko
+*/*.mod.c
+*/*.mod.o
+*/*.o
+*/*.order
+*/*.symvers
+*/.*
